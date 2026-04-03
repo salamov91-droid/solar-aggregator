@@ -6,6 +6,7 @@ interface Props {
   solution: SolarSolution;
   delivery: number;
   includeDelivery: boolean;
+  tariff: number;
 }
 
 const typeImageMap: Record<SolarSolution['type'], string> = {
@@ -14,6 +15,24 @@ const typeImageMap: Record<SolarSolution['type'], string> = {
   'Автономные': '/images/solutions/offgrid.svg',
 };
 
+function parseGenerationPerDay(value: string | null): number | null {
+  if (!value) return null;
+  const normalized = value.replace(',', '.');
+  const match = normalized.match(/\d+(?:\.\d+)?/);
+  return match ? Number(match[0]) : null;
+}
+
+function calculatePaybackYears(turnkey: number, tariff: number, generationPerDay: string | null): number | null {
+  const generation = parseGenerationPerDay(generationPerDay);
+  if (!generation || generation <= 0 || tariff <= 0 || turnkey <= 0) return null;
+
+  const monthlyBenefit = generation * tariff * 30;
+  if (monthlyBenefit <= 0) return null;
+
+  const months = turnkey / monthlyBenefit;
+  return months / 12;
+}
+
 function getStatusBadges(solution: SolarSolution): string[] {
   const badges: string[] = [];
   badges.push(solution.segment ?? 'Для бизнеса');
@@ -21,11 +40,12 @@ function getStatusBadges(solution: SolarSolution): string[] {
   return badges;
 }
 
-export default function SolutionCard({ solution, delivery, includeDelivery }: Props) {
+export default function SolutionCard({ solution, delivery, includeDelivery, tariff }: Props) {
   const basePrice = solution.basePrice ?? 0;
   const pricing = calculatePricing(basePrice, includeDelivery ? delivery : 0);
   const badges = getStatusBadges(solution);
   const coverImage = solution.imageUrl ?? typeImageMap[solution.type];
+  const paybackYears = calculatePaybackYears(pricing.turnkey, tariff, solution.generationPerDay);
 
   return (
     <Link href={`/solutions/${solution.id}`} className="solution-card-link" aria-label={`Открыть решение ${solution.title}`}>
@@ -58,6 +78,11 @@ export default function SolutionCard({ solution, delivery, includeDelivery }: Pr
             <div className="price-value">{formatPrice(pricing.turnkey)}</div>
             <small>Доставка, монтаж, пусконаладочные работы</small>
           </div>
+        </div>
+
+        <div className="payback-box">
+          <small>Срок окупаемости (по вашему тарифу)</small>
+          <strong>{paybackYears ? `${paybackYears.toFixed(1)} лет` : 'Недостаточно данных для расчёта'}</strong>
         </div>
 
         <div className="total">

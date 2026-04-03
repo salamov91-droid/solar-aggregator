@@ -19,6 +19,7 @@ export default function CatalogClient({
   const [type, setType] = useState('Все');
   const [search, setSearch] = useState('');
   const [delivery, setDelivery] = useState(0);
+  const [tariff, setTariff] = useState(7);
   const [includeDelivery, setIncludeDelivery] = useState(true);
 
   const filtered = useMemo(() => {
@@ -62,6 +63,8 @@ export default function CatalogClient({
           setSearch={setSearch}
           delivery={delivery}
           setDelivery={setDelivery}
+          tariff={tariff}
+          setTariff={setTariff}
         />
 
         <div className="summary-bar">
@@ -77,6 +80,10 @@ export default function CatalogClient({
             <small>Средняя цена оборудования</small>
             <strong>{averagePrice ? `${new Intl.NumberFormat('ru-RU').format(averagePrice)} ₽` : '—'}</strong>
           </div>
+          <div className="summary-bar__item">
+            <small>Тариф для расчёта окупаемости</small>
+            <strong>{tariff.toLocaleString('ru-RU')} ₽/кВт·ч</strong>
+          </div>
           <label className="option option--chip">
             <input type="checkbox" checked={includeDelivery} onChange={(e) => setIncludeDelivery(e.target.checked)} />
             Учитывать доставку в «Под ключ»
@@ -88,7 +95,7 @@ export default function CatalogClient({
         <section className="hero empty-state">
           <h2>Ничего не найдено</h2>
           <p>Попробуйте изменить поисковый запрос, тип решения или параметры доставки.</p>
-          <button className="button" onClick={() => { setType('Все'); setSearch(''); setDelivery(0); setIncludeDelivery(true); }}>
+          <button className="button" onClick={() => { setType('Все'); setSearch(''); setDelivery(0); setTariff(7); setIncludeDelivery(true); }}>
             Сбросить фильтры
           </button>
         </section>
@@ -100,6 +107,7 @@ export default function CatalogClient({
               solution={solution}
               delivery={delivery}
               includeDelivery={includeDelivery}
+              tariff={tariff}
             />
           ))}
         </section>

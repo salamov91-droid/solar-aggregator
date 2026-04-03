@@ -15,37 +15,15 @@ export async function getSolutions(): Promise<SolarSolution[]> {
 
   console.info(`[solutions] getSolutions start: liveMode=${liveMode}, cached=${cached.items.length}, cacheFresh=${Boolean(hasFreshCache)}`);
 
-  if (liveMode) {
-    const live = await fetchLiveSolutions('getSolutions/liveMode');
-    if (live.length) {
-      await persistCache(live);
-      console.info(`[solutions] getSolutions resolved from live mode with ${live.length} items`);
-      return live;
-    }
-
-    if (cached.items.length) {
-      console.warn(`[solutions] getSolutions live mode failed, using cached ${cached.items.length} items`);
-      return cached.items;
-    }
-
-    console.warn(`[solutions] getSolutions live mode failed and cache empty, using fallback ${fallbackSolutions.length} items`);
-    return fallbackSolutions;
-  }
-
-  if (cached.items.length && hasFreshCache) {
-    console.info(`[solutions] getSolutions resolved from fresh cache with ${cached.items.length} items`);
-    return cached.items;
-  }
-
-  const live = await fetchLiveSolutions('getSolutions/cacheExpired');
+  const live = await fetchLiveSolutions('getSolutions/liveFirst');
   if (live.length) {
     await persistCache(live);
-    console.info(`[solutions] getSolutions resolved from live (cache refresh) with ${live.length} items`);
+    console.info(`[solutions] getSolutions resolved from live with ${live.length} items`);
     return live;
   }
 
   if (cached.items.length) {
-    console.warn(`[solutions] getSolutions live refresh failed, using stale cache ${cached.items.length} items`);
+    console.warn(`[solutions] getSolutions live failed, using ${hasFreshCache ? 'fresh' : 'stale'} cache ${cached.items.length} items`);
     return cached.items;
   }
 

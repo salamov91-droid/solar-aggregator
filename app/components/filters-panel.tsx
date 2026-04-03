@@ -7,6 +7,8 @@ interface Props {
   setSearch: (value: string) => void;
   delivery: number;
   setDelivery: (value: number) => void;
+  tariff: number;
+  setTariff: (value: number) => void;
 }
 
 export default function FiltersPanel({
@@ -16,6 +18,8 @@ export default function FiltersPanel({
   setSearch,
   delivery,
   setDelivery,
+  tariff,
+  setTariff,
 }: Props) {
   const types: Array<'Все' | SolutionType> = ['Все', 'Сетевые', 'Гибридные', 'Автономные'];
 
@@ -36,6 +40,11 @@ export default function FiltersPanel({
       <label className="filter-field">
         <span>Доставка, ₽</span>
         <input type="number" min={0} value={delivery} onChange={(e) => setDelivery(Number(e.target.value || 0))} />
+      </label>
+
+      <label className="filter-field">
+        <span>Тариф электроэнергии, ₽/кВт·ч</span>
+        <input type="number" min={0} step="0.1" value={tariff} onChange={(e) => setTariff(Number(e.target.value || 0))} />
       </label>
     </div>
   );
