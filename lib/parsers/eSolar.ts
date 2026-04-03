@@ -42,14 +42,27 @@ function resolveUrl(href: string | undefined, fallback: string): string {
   return `https://e-solarpower.ru${href}`;
 }
 
+const cardSelector = [
+  '.product-layout',
+  '.product-thumb',
+  '.product-grid',
+  '.product-item',
+  '[class*="product-layout"]',
+  '[class*="product-thumb"]',
+].join(', ');
+
 export async function scrapeESolarSolutions(): Promise<SolarSolution[]> {
   const results: SolarSolution[] = [];
+  let totalCardsFound = 0;
 
   for (const category of categories) {
     const html = await fetchHtml(category.url);
     const $ = load(html);
 
-    const cards = $('.product-layout, .product-thumb, .product-grid, .product-item, .product-thumb-transition');
+    const cards = $(cardSelector);
+    totalCardsFound += cards.length;
+
+    console.info(`[scraper][e-solar] ${category.url} cardsFound=${cards.length}`);
 
     if (!cards.length) {
       console.warn(`[scraper][e-solar] No cards found for ${category.url}`);
@@ -57,11 +70,11 @@ export async function scrapeESolarSolutions(): Promise<SolarSolution[]> {
     }
 
     cards.each((_, node) => {
-      const title = normalizeWhitespace($(node).find('.caption h4, .product-name, h4 a, .name').first().text());
+      const title = normalizeWhitespace($(node).find('.caption h4, .caption h4 a, .product-name, h4 a, .name, [class*=name]').first().text());
       const href = $(node).find('a[href]').first().attr('href') ?? category.url;
-      const priceRaw = normalizeWhitespace($(node).find('.price, .price-new, [class*=price]').first().text());
+      const priceRaw = normalizeWhitespace($(node).find('.price, .price-new, .caption .price, [class*=price]').first().text());
       const meta = normalizeWhitespace($(node).text());
-      const imageRaw = $(node).find('img').first().attr('src') ?? $(node).find('img').first().attr('data-src') ?? null;
+      const imageRaw = $(node).find('img').first().attr('src') ?? $(node).find('img').first().attr('data-src') ?? $(node).find('img').first().attr('data-lazy') ?? null;
 
       if (!title) return;
 
@@ -87,7 +100,11 @@ export async function scrapeESolarSolutions(): Promise<SolarSolution[]> {
     });
   }
 
-  return dedupe(results);
+  const deduped = dedupe(results);
+
+  console.info(`[scraper][e-solar] parsed=${results.length}, deduped=${deduped.length}, cardsFound=${totalCardsFound}`);
+
+  return deduped;
 }
 
 function dedupe(items: SolarSolution[]): SolarSolution[] {

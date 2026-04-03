@@ -35,26 +35,40 @@ function resolveUrl(href: string | undefined, fallback: string): string {
   return `https://www.voltaen.com${href}`;
 }
 
+const cardSelector = [
+  '.catalog-item-card',
+  '.catalog-item',
+  '.product-item',
+  '.products-list__item',
+  '[class*="catalog-item"]',
+  '[class*="product-item"]',
+].join(', ');
+
 export async function scrapeVoltaSolutions(): Promise<SolarSolution[]> {
   const results: SolarSolution[] = [];
+  let totalCardsFound = 0;
 
   for (const category of voltaCategories) {
     const html = await fetchHtml(category.url);
     const $ = load(html);
 
-    const cards = $('.catalog-item-card, .product-item, .products-list__item, .catalog-section-list > *');
+    const cards = $(cardSelector);
+    totalCardsFound += cards.length;
+
+    console.info(`[scraper][volta] ${category.url} cardsFound=${cards.length}`);
+
     if (!cards.length) {
       console.warn(`[scraper][volta] No cards found for ${category.url}`);
       continue;
     }
 
     cards.each((_, node) => {
-      const title = normalizeWhitespace($(node).find('.catalog-item-title, .catalog-item-card__title, .item-title, h3, h4').first().text());
+      const title = normalizeWhitespace($(node).find('.catalog-item-title, .catalog-item-card__title, .item-title, h3, h4, [class*=title]').first().text());
       const linkNode = $(node).find('a[href]').first();
       const href = linkNode.attr('href');
       const sourceUrl = resolveUrl(href, category.url);
       const priceRaw = normalizeWhitespace($(node).find('.price, .catalog-item-price, .price-current, [class*=price]').first().text());
-      const imageRaw = $(node).find('img').first().attr('src') ?? $(node).find('img').first().attr('data-src') ?? null;
+      const imageRaw = $(node).find('img').first().attr('src') ?? $(node).find('img').first().attr('data-src') ?? $(node).find('img').first().attr('data-lazy') ?? null;
       const imageUrl = imageRaw ? resolveUrl(imageRaw, category.url) : null;
 
       if (!title) return;
@@ -78,7 +92,10 @@ export async function scrapeVoltaSolutions(): Promise<SolarSolution[]> {
     });
   }
 
-  return dedupe(results);
+  const deduped = dedupe(results);
+  console.info(`[scraper][volta] parsed=${results.length}, deduped=${deduped.length}, cardsFound=${totalCardsFound}`);
+
+  return deduped;
 }
 
 function dedupe(items: SolarSolution[]): SolarSolution[] {
