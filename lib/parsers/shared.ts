@@ -1,19 +1,40 @@
 import * as cheerio from 'cheerio';
 
-export async function fetchHtml(url: string): Promise<string> {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; SolarAggregatorBot/1.0)',
-      Accept: 'text/html,application/xhtml+xml',
-    },
-    cache: 'no-store',
-  });
+const REQUEST_TIMEOUT_MS = 15000;
+const REQUEST_RETRIES = 2;
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch ${url}: ${response.status}`);
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export async function fetchHtml(url: string): Promise<string> {
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= REQUEST_RETRIES; attempt += 1) {
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; SolarAggregatorBot/1.0)',
+          Accept: 'text/html,application/xhtml+xml',
+        },
+        cache: 'no-store',
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ${url}: ${response.status}`);
+      }
+
+      return response.text();
+    } catch (error) {
+      lastError = error;
+      if (attempt < REQUEST_RETRIES) {
+        await sleep(500 * (attempt + 1));
+      }
+    }
   }
 
-  return response.text();
+  throw lastError instanceof Error ? lastError : new Error(`Failed to fetch ${url}`);
 }
 
 export function normalizeWhitespace(value: string | null | undefined): string {

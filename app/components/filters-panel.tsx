@@ -1,8 +1,6 @@
 import type { SolutionType } from '@/types/solution';
 
 interface Props {
-  partner: string;
-  setPartner: (value: string) => void;
   type: string;
   setType: (value: string) => void;
   search: string;
@@ -12,8 +10,6 @@ interface Props {
 }
 
 export default function FiltersPanel({
-  partner,
-  setPartner,
   type,
   setType,
   search,
@@ -24,18 +20,10 @@ export default function FiltersPanel({
   const types: Array<'Все' | SolutionType> = ['Все', 'Сетевые', 'Гибридные', 'Автономные'];
 
   return (
-    <section className="filters">
+    <section className="filters filters--compact">
       <div className="panel">
         <label htmlFor="search">Поиск</label>
         <input id="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="5 кВт, Дом-2, гибрид" />
-      </div>
-      <div className="panel">
-        <label htmlFor="partner">Партнёр</label>
-        <select id="partner" value={partner} onChange={(e) => setPartner(e.target.value)}>
-          <option>Все</option>
-          <option>Volta Energy</option>
-          <option>e-solarpower</option>
-        </select>
       </div>
       <div className="panel">
         <label htmlFor="type">Тип решения</label>

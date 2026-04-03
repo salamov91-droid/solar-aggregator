@@ -43,10 +43,22 @@ async function fetchLiveSolutions(): Promise<SolarSolution[]> {
     scrapeESolarSolutions(),
   ]);
 
+  if (volta.status === 'rejected') {
+    console.error('[scraper] Volta failed:', volta.reason);
+  }
+
+  if (eSolar.status === 'rejected') {
+    console.error('[scraper] e-solarpower failed:', eSolar.reason);
+  }
+
   const merged: SolarSolution[] = [
     ...(volta.status === 'fulfilled' ? volta.value : []),
     ...(eSolar.status === 'fulfilled' ? eSolar.value : []),
   ];
+
+  if (!merged.length) {
+    console.warn('[scraper] No live solutions fetched. Falling back to cache/fallback data.');
+  }
 
   return merged;
 }

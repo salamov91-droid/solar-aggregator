@@ -4,24 +4,28 @@ import { calculatePricing, formatPrice } from '@/lib/pricing';
 interface Props {
   solution: SolarSolution;
   delivery: number;
-  includeInstallation: boolean;
   includeDelivery: boolean;
-  showTurnkey: boolean;
 }
 
-export default function SolutionCard({ solution, delivery, includeInstallation, includeDelivery, showTurnkey }: Props) {
+const typeImageMap: Record<SolarSolution['type'], string> = {
+  'Сетевые': '/images/solutions/grid.svg',
+  'Гибридные': '/images/solutions/hybrid.svg',
+  'Автономные': '/images/solutions/offgrid.svg',
+};
+
+export default function SolutionCard({ solution, delivery, includeDelivery }: Props) {
   const basePrice = solution.basePrice ?? 0;
   const pricing = calculatePricing(basePrice, includeDelivery ? delivery : 0);
-  const total = showTurnkey
-    ? pricing.turnkey
-    : pricing.equipment + (includeInstallation ? pricing.installation : 0) + (includeDelivery ? pricing.delivery : 0);
 
   return (
     <article className="card">
+      <div className="solution-cover" aria-hidden="true">
+        <img src={typeImageMap[solution.type]} alt="" />
+      </div>
+
       <div className="card-top">
         <div>
           <div className="tags">
-            <span className="tag">{solution.partner}</span>
             <span className="tag">{solution.type}</span>
           </div>
           <h2>{solution.title}</h2>
@@ -35,17 +39,22 @@ export default function SolutionCard({ solution, delivery, includeInstallation, 
         <div className="spec"><div className="spec-title">АКБ</div><div className="spec-value">{solution.battery ?? '—'}</div></div>
       </div>
 
-      <div className="prices">
-        <div className="price-box"><div className="muted">Оборудование</div><div className="price-value">{formatPrice(solution.basePrice)}</div></div>
-        <div className="price-box"><div className="muted">Монтаж 15%</div><div className="price-value">{formatPrice(pricing.installation)}</div></div>
-        <div className="price-box"><div className="muted">Доставка</div><div className="price-value">{formatPrice(pricing.delivery)}</div></div>
-        <div className="price-box"><div className="muted">Под ключ</div><div className="price-value">{formatPrice(pricing.turnkey)}</div></div>
+      <div className="prices prices--duo">
+        <div className="price-box">
+          <div className="muted">Стоимость оборудования</div>
+          <div className="price-value">{formatPrice(solution.basePrice)}</div>
+        </div>
+        <div className="price-box price-box--accent">
+          <div className="muted">Под ключ (с инсталляцией)</div>
+          <div className="price-value">{formatPrice(pricing.turnkey)}</div>
+          <small>Монтаж 15%{includeDelivery ? ' + доставка' : ''}</small>
+        </div>
       </div>
 
       <div className="total">
         <div>
-          <small>Итог с выбранными опциями</small>
-          <div className="price-value">{formatPrice(total)}</div>
+          <small>Итоговая цена под ключ</small>
+          <div className="price-value">{formatPrice(pricing.turnkey)}</div>
         </div>
         <button className="cta">Оставить заявку</button>
       </div>
