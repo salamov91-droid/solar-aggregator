@@ -1,0 +1,36 @@
+<svg width="1200" height="620" viewBox="0 0 1200 620" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="620" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E2FBE8"/>
+      <stop offset="1" stop-color="#F8FAFC"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="165" y1="228" x2="742" y2="506" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#059669"/>
+      <stop offset="1" stop-color="#0F172A"/>
+    </linearGradient>
+    <linearGradient id="battery" x1="780" y1="212" x2="1015" y2="480" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#16A34A"/>
+      <stop offset="1" stop-color="#14532D"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="620" fill="url(#bg)"/>
+  <circle cx="978" cy="115" r="60" fill="#FCD34D"/>
+  <rect x="145" y="228" width="620" height="278" rx="24" fill="url(#panel)"/>
+  <g stroke="#6EE7B7" stroke-width="4" opacity="0.9">
+    <path d="M220 278H690"/>
+    <path d="M220 334H690"/>
+    <path d="M220 390H690"/>
+    <path d="M220 446H690"/>
+    <path d="M280 248V486"/>
+    <path d="M365 248V486"/>
+    <path d="M450 248V486"/>
+    <path d="M535 248V486"/>
+    <path d="M620 248V486"/>
+  </g>
+  <rect x="808" y="212" width="215" height="268" rx="30" fill="url(#battery)"/>
+  <rect x="882" y="186" width="68" height="28" rx="10" fill="#166534"/>
+  <rect x="860" y="270" width="111" height="16" rx="8" fill="#86EFAC"/>
+  <rect x="860" y="306" width="133" height="16" rx="8" fill="#86EFAC"/>
+  <rect x="860" y="342" width="98" height="16" rx="8" fill="#86EFAC"/>
+  <path d="M120 540C310 468 890 468 1080 540" stroke="#94A3B8" stroke-width="10" stroke-linecap="round"/>
+</svg>

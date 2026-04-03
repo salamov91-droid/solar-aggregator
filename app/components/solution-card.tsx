@@ -9,6 +9,12 @@ interface Props {
   showTurnkey: boolean;
 }
 
+const typeImageMap: Record<SolarSolution['type'], string> = {
+  'Сетевые': '/images/solutions/grid.svg',
+  'Гибридные': '/images/solutions/hybrid.svg',
+  'Автономные': '/images/solutions/offgrid.svg',
+};
+
 export default function SolutionCard({ solution, delivery, includeInstallation, includeDelivery, showTurnkey }: Props) {
   const basePrice = solution.basePrice ?? 0;
   const pricing = calculatePricing(basePrice, includeDelivery ? delivery : 0);
@@ -18,10 +24,13 @@ export default function SolutionCard({ solution, delivery, includeInstallation, 
 
   return (
     <article className="card">
+      <div className="solution-cover" aria-hidden="true">
+        <img src={typeImageMap[solution.type]} alt="" />
+      </div>
+
       <div className="card-top">
         <div>
           <div className="tags">
-            <span className="tag">{solution.partner}</span>
             <span className="tag">{solution.type}</span>
           </div>
           <h2>{solution.title}</h2>
