@@ -26,12 +26,12 @@ export default function RecommendationWizard({ solutions }: Props) {
   const result = useMemo(() => getRecommendation(answers, solutions), [answers, solutions]);
 
   return (
-    <section className="wizard">
+    <section className="wizard wizard--premium">
       <div className="wizard__form">
         <div className="section-heading section-heading--compact">
-          <span className="badge">Подборщик</span>
-          <h2>Подберите лучшее решение по параметрам объекта</h2>
-          <p>Калькулятор фильтрует каталог и предлагает наиболее подходящий тип станции и конкретные позиции.</p>
+          <span className="badge">Smart-подбор</span>
+          <h2>Подберите оптимальную СЭС под ваш объект за 1 минуту</h2>
+          <p>Платформа анализирует сценарий использования и предлагает решение с экономическим и техническим обоснованием.</p>
         </div>
 
         <div className="wizard-grid">
@@ -79,15 +79,6 @@ export default function RecommendationWizard({ solutions }: Props) {
           </label>
 
           <label>
-            <span>Предпочитаемый партнёр</span>
-            <select value={answers.preferredPartner} onChange={(e) => setAnswers({ ...answers, preferredPartner: e.target.value as CalculatorAnswers['preferredPartner'] })}>
-              <option value="all">Любой</option>
-              <option value="Volta Energy">Volta Energy</option>
-              <option value="e-solarpower">e-solarpower</option>
-            </select>
-          </label>
-
-          <label>
             <span>Доставка, ₽</span>
             <input type="number" min={0} value={answers.delivery} onChange={(e) => setAnswers({ ...answers, delivery: Number(e.target.value || 0) })} />
           </label>
@@ -95,8 +86,8 @@ export default function RecommendationWizard({ solutions }: Props) {
       </div>
 
       <div className="wizard__result">
-        <div className="recommendation-card">
-          <span className="badge">Рекомендация</span>
+        <div className="recommendation-card recommendation-card--insight">
+          <span className="badge">Рекомендация платформы</span>
           <h3>{result.recommendation.title}</h3>
           <p>{result.recommendation.explanation}</p>
           <ul>
@@ -105,27 +96,31 @@ export default function RecommendationWizard({ solutions }: Props) {
         </div>
 
         {result.bestMatch ? (
-          <div className="recommendation-card recommendation-card--highlight">
-            <small>Лучшее решение</small>
+          <div className="recommendation-card recommendation-card--highlight recommendation-card--featured">
+            <small>Лучший вариант</small>
             <h3>{result.bestMatch.title}</h3>
-            <p>{result.bestMatch.partner} · {result.bestMatch.type}</p>
+            <p>{result.bestMatch.type}</p>
             <div className="recommendation-specs">
               <span>Мощность: {result.bestMatch.power ?? '—'}</span>
               <span>Выработка: {result.bestMatch.generationPerDay ?? '—'}</span>
               <span>АКБ: {result.bestMatch.battery ?? '—'}</span>
             </div>
             <div className="recommendation-price">
+              <small>Оборудование</small>
               <strong>{formatPrice(result.bestMatch.basePrice)}</strong>
               <small>
                 Под ключ: {formatPrice(calculatePricing(result.bestMatch.basePrice ?? 0, answers.delivery).turnkey)}
               </small>
             </div>
-            <a className="button" href={result.bestMatch.sourceUrl} target="_blank" rel="noreferrer">Открыть источник</a>
+            <div className="recommendation-actions">
+              <button type="button" className="button">Получить коммерческое предложение</button>
+              <button type="button" className="button button--ghost">Сохранить подбор</button>
+            </div>
           </div>
         ) : (
           <div className="recommendation-card">
             <h3>Подходящих решений не найдено</h3>
-            <p>Измените партнёра или сценарий подбора, чтобы получить рекомендации.</p>
+            <p>Измените сценарий подбора, чтобы получить актуальные рекомендации.</p>
           </div>
         )}
 
@@ -137,7 +132,7 @@ export default function RecommendationWizard({ solutions }: Props) {
                 <div key={item.id} className="recommendation-list__item">
                   <div>
                     <strong>{item.title}</strong>
-                    <small>{item.partner} · {item.power ?? '—'}</small>
+                    <small>{item.type} · {item.power ?? '—'}</small>
                   </div>
                   <span>{formatPrice(item.basePrice)}</span>
                 </div>
