@@ -1,4 +1,4 @@
-import type { SolarSolution, SolutionType } from '@/types/solution';
+import type { SolarSolution, SolutionScenario, SolutionSegment, SolutionType } from '@/types/solution';
 import { fetchHtml, load, normalizeWhitespace, parsePrice, slugify } from './shared';
 
 const categories: Array<{ type: SolutionType; url: string }> = [
@@ -25,6 +25,23 @@ function cleanValue(raw: string | null): string | null {
   return value || null;
 }
 
+function inferScenario(type: SolutionType): SolutionScenario {
+  if (type === 'Гибридные') return 'Экономия + резерв';
+  if (type === 'Автономные') return 'Автономия';
+  return 'Экономия';
+}
+
+function inferSegment(categoryUrl: string, title: string): SolutionSegment {
+  const value = `${categoryUrl} ${title}`.toLowerCase();
+  return value.includes('predpriyatiy') || value.includes('предпр') ? 'Для бизнеса' : 'Для дома';
+}
+
+function resolveUrl(href: string | undefined, fallback: string): string {
+  if (!href) return fallback;
+  if (href.startsWith('http')) return href;
+  return `https://e-solarpower.ru${href}`;
+}
+
 export async function scrapeESolarSolutions(): Promise<SolarSolution[]> {
   const results: SolarSolution[] = [];
 
@@ -32,26 +49,38 @@ export async function scrapeESolarSolutions(): Promise<SolarSolution[]> {
     const html = await fetchHtml(category.url);
     const $ = load(html);
 
-    const cards = $('.product-layout, .product-thumb, .product-grid, .product-item');
+    const cards = $('.product-layout, .product-thumb, .product-grid, .product-item, .product-thumb-transition');
+
+    if (!cards.length) {
+      console.warn(`[scraper][e-solar] No cards found for ${category.url}`);
+      continue;
+    }
+
     cards.each((_, node) => {
-      const title = normalizeWhitespace($(node).find('.caption h4, .product-name, h4 a').first().text());
-      const href = $(node).find('a').first().attr('href') ?? category.url;
-      const priceRaw = normalizeWhitespace($(node).find('.price, .price-new').first().text());
+      const title = normalizeWhitespace($(node).find('.caption h4, .product-name, h4 a, .name').first().text());
+      const href = $(node).find('a[href]').first().attr('href') ?? category.url;
+      const priceRaw = normalizeWhitespace($(node).find('.price, .price-new, [class*=price]').first().text());
       const meta = normalizeWhitespace($(node).text());
+      const imageRaw = $(node).find('img').first().attr('src') ?? $(node).find('img').first().attr('data-src') ?? null;
+
       if (!title) return;
 
-      const sourceUrl = href.startsWith('http') ? href : `https://e-solarpower.ru${href}`;
+      const sourceUrl = resolveUrl(href, category.url);
+      const imageUrl = imageRaw ? resolveUrl(imageRaw, category.url) : null;
 
       results.push({
-        id: `esolar-${slugify(title)}`,
+        id: `esolar-${slugify(sourceUrl.replace('https://e-solarpower.ru', ''))}`,
         partner: 'e-solarpower',
         type: category.type,
+        scenario: inferScenario(category.type),
+        segment: inferSegment(category.url, title),
         title,
         power: cleanValue(extractField(meta, [/Мощность\s*[:\-]?\s*([^\n]+)/i, /(\d+[\.,]?\d*\s*кВт)/i])),
         generationPerDay: cleanValue(extractField(meta, [/Выработка\s*[:\-]?\s*([^\n]+)/i, /(\d+[\.,]?\d*\s*кВт\s*·?ч\/сутки)/i])),
         battery: cleanValue(extractField(meta, [/АКБ\s*[:\-]?\s*([^\n]+)/i, /(\d+[\.,]?\d*\s*кВт\s*·?ч\s*LiFePO4)/i, /(\d+\s*[xх×]\s*\d+\s*Ач)/i])),
         basePrice: parsePrice(priceRaw),
         sourceUrl,
+        imageUrl,
         categoryUrl: category.url,
         lastUpdated: new Date().toISOString(),
       });
@@ -64,8 +93,8 @@ export async function scrapeESolarSolutions(): Promise<SolarSolution[]> {
 function dedupe(items: SolarSolution[]): SolarSolution[] {
   const seen = new Map<string, SolarSolution>();
   for (const item of items) {
-    if (!seen.has(item.id)) {
-      seen.set(item.id, item);
+    if (!seen.has(item.sourceUrl)) {
+      seen.set(item.sourceUrl, item);
     }
   }
   return [...seen.values()];

@@ -1,4 +1,6 @@
 export type SolutionType = 'Сетевые' | 'Гибридные' | 'Автономные';
+export type SolutionSegment = 'Для дома' | 'Для бизнеса';
+export type SolutionScenario = 'Экономия' | 'Экономия + резерв' | 'Автономия';
 
 export interface SolarSolution {
   id: string;
@@ -12,6 +14,9 @@ export interface SolarSolution {
   sourceUrl: string;
   categoryUrl: string;
   lastUpdated: string;
+  imageUrl?: string | null;
+  segment?: SolutionSegment;
+  scenario?: SolutionScenario;
 }
 
 export interface SolutionPricing {

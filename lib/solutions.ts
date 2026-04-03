@@ -6,20 +6,24 @@ import { scrapeVoltaSolutions } from '@/lib/parsers/volta';
 import { scrapeESolarSolutions } from '@/lib/parsers/eSolar';
 
 const cachePath = path.join(process.cwd(), 'public', 'solutions-cache.json');
+const CACHE_TTL_MS = 1000 * 60 * 60 * 6;
 
 export async function getSolutions(): Promise<SolarSolution[]> {
-  const liveMode = isLiveCatalogMode();
+  const cached = await readCache();
+  const hasFreshCache = cached.updatedAt && Date.now() - cached.updatedAt < CACHE_TTL_MS;
 
-  if (liveMode) {
-    const live = await fetchLiveSolutions();
-    if (live.length) {
-      return live;
-    }
+  if (cached.items.length && hasFreshCache) {
+    return cached.items;
   }
 
-  const cached = await readCache();
-  if (cached.length) {
-    return cached;
+  const live = await fetchLiveSolutions();
+  if (live.length) {
+    await persistCache(live);
+    return live;
+  }
+
+  if (cached.items.length) {
+    return cached.items;
   }
 
   return fallbackSolutions;
@@ -29,12 +33,16 @@ export async function refreshSolutions(): Promise<SolarSolution[]> {
   const result = await fetchLiveSolutions();
   const finalResult = result.length ? result : fallbackSolutions;
 
-  if (shouldPersistCache()) {
-    await ensurePublicDir();
-    await fs.writeFile(cachePath, JSON.stringify(finalResult, null, 2), 'utf-8');
-  }
+  await persistCache(finalResult);
 
   return finalResult;
+}
+
+async function persistCache(items: SolarSolution[]) {
+  if (shouldPersistCache()) {
+    await ensurePublicDir();
+    await fs.writeFile(cachePath, JSON.stringify(items, null, 2), 'utf-8');
+  }
 }
 
 async function fetchLiveSolutions(): Promise<SolarSolution[]> {
@@ -63,22 +71,26 @@ async function fetchLiveSolutions(): Promise<SolarSolution[]> {
   return merged;
 }
 
-async function readCache(): Promise<SolarSolution[]> {
+async function readCache(): Promise<{ items: SolarSolution[]; updatedAt: number | null }> {
   try {
-    const raw = await fs.readFile(cachePath, 'utf-8');
+    const [raw, stats] = await Promise.all([
+      fs.readFile(cachePath, 'utf-8'),
+      fs.stat(cachePath),
+    ]);
+
     const parsed = JSON.parse(raw) as SolarSolution[];
-    return Array.isArray(parsed) ? parsed : [];
+
+    return {
+      items: Array.isArray(parsed) ? parsed : [],
+      updatedAt: stats.mtimeMs,
+    };
   } catch {
-    return [];
+    return { items: [], updatedAt: null };
   }
 }
 
 async function ensurePublicDir() {
   await fs.mkdir(path.dirname(cachePath), { recursive: true });
-}
-
-function isLiveCatalogMode(): boolean {
-  return process.env.LIVE_CATALOG_MODE === 'true' || process.env.VERCEL === '1';
 }
 
 function shouldPersistCache(): boolean {
